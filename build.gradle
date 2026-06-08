@@ -1,0 +1,64 @@
+plugins {
+	id "net.fabricmc.fabric-loom" version "${loom_version}"
+	id "org.jetbrains.kotlin.jvm" version "${kotlin_version}"
+	id "maven-publish"
+}
+
+repositories {
+	mavenCentral()
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	implementation "org.jetbrains.kotlin:kotlin-stdlib:${project.kotlin_version}"
+	include "org.jetbrains.kotlin:kotlin-stdlib:${project.kotlin_version}"
+	implementation "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}"
+	include "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}"
+
+	["windows", "linux", "macos", "macos-arm64"].each { os ->
+		implementation "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-${os}"
+		include "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-${os}"
+	}
+}
+
+processResources {
+	inputs.property "version", project.version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": inputs.properties.version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+	kotlinOptions {
+		jvmTarget = "25"
+	}
+}
+
+java {
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			artifactId = project.archives_base_name
+			from components.java
+		}
+	}
+}
