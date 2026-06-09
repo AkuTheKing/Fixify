@@ -46,6 +46,7 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 	private var searchFocused = false
 	private var listeningKeybind: Entry? = null
 	private var focusedColorHex: Entry? = null
+	private var focusedTextEntry: Entry? = null
 
 	private val columns = arrayListOf(
 		CategoryColumn(
@@ -95,9 +96,59 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 			MENU_WIDTH / 2.0f - COLUMN_WIDTH - 12.0f,
 		),
 		CategoryColumn(
-			"SkyBlock",
+			"Visuals",
 			arrayOf(
-				Entry.module("Only in SkyBlock", FixifyFeatures.onlyInSkyblock),
+				Entry.module("Player Hider", FixifyFeatures.playerHiderEnabled),
+				Entry.setting("Hide Players", "x", FixifyFeatures.playerHiderHidePlayers),
+				Entry.slider("Distance", FixifyFeatures.playerHiderDistance.toDouble(), 0.5, 10.0, 0.1, "", 1),
+				Entry.setting("Hide All", "x", FixifyFeatures.playerHiderHideAll),
+				Entry.setting("Ghost Mode", "x", FixifyFeatures.playerHiderGhostMode),
+				Entry.slider("Opacity", FixifyFeatures.playerHiderGhostOpacity * 100.0, 0.0, 100.0, 1.0, "%", 0),
+				Entry.setting("Click Through Players", "x", FixifyFeatures.playerHiderClickThrough),
+				Entry.module("Player Size", FixifyFeatures.playerSizeEnabled),
+				Entry.setting("Scale All Players", "x", FixifyFeatures.playerSizeScaleAllPlayers),
+				Entry.slider("X Scale", FixifyFeatures.playerSizeX.toDouble(), 0.1, 3.0, 0.1, "", 1),
+				Entry.slider("Y Scale", FixifyFeatures.playerSizeY.toDouble(), -3.0, 3.0, 0.1, "", 1),
+				Entry.slider("Z Scale", FixifyFeatures.playerSizeZ.toDouble(), 0.1, 3.0, 0.1, "", 1),
+				Entry.module("Hit Color", FixifyFeatures.hitColorEnabled),
+				Entry.color("Color", FixifyFeatures.hitColor),
+				Entry.module("Fullbright", FixifyFeatures.fullbrightEnabled),
+				Entry.module("Performance HUD", FixifyFeatures.performanceHudEnabled),
+				Entry.mode(
+					"Direction",
+					"",
+					FixifyFeatures.performanceHudDirections,
+					FixifyFeatures.performanceHudDirection,
+				),
+				Entry.setting("Show FPS", "x", FixifyFeatures.performanceHudShowFps),
+				Entry.setting("Show TPS", "x", FixifyFeatures.performanceHudShowTps),
+				Entry.setting("Show Ping", "x", FixifyFeatures.performanceHudShowPing),
+				Entry.mode("Anchor", "", FixifyFeatures.hudAnchors, FixifyFeatures.performanceHudAnchor),
+				Entry.slider("Scale", FixifyFeatures.performanceHudScale * 100.0, 50.0, 200.0, 5.0, "%", 0),
+				Entry.action("Open HUD Editor") {
+					minecraft.setScreen(FixifyHudEditorScreen(this, FixifyHudWidget.PERFORMANCE))
+				},
+				Entry.color("Name Color", FixifyFeatures.performanceHudNameColor),
+				Entry.color("Value Color", FixifyFeatures.performanceHudValueColor),
+				Entry.module("Render Optimizer", FixifyFeatures.renderOptimizerEnabled),
+				Entry.setting("Hide Falling Blocks", "x", FixifyFeatures.renderOptimizerHideFallingBlocks),
+				Entry.setting("Hide Lightning", "x", FixifyFeatures.renderOptimizerHideLightning),
+				Entry.setting("Hide Experience Orbs", "x", FixifyFeatures.renderOptimizerHideExperienceOrbs),
+				Entry.setting("Hide Death Animation", "x", FixifyFeatures.renderOptimizerHideDeathAnimation),
+				Entry.setting("Hide Dying Armor Stands", "x", FixifyFeatures.renderOptimizerHideDyingArmorStands),
+				Entry.setting("Hide Explosion Particles", "x", FixifyFeatures.renderOptimizerHideExplosionParticles),
+				Entry.setting("Hide Archer Passive", "x", FixifyFeatures.renderOptimizerHideArcherPassive),
+				Entry.setting("Hide Healer Fairy", "x", FixifyFeatures.renderOptimizerHideHealerFairy),
+				Entry.setting("Hide Soul Weaver", "x", FixifyFeatures.renderOptimizerHideSoulWeaver),
+				Entry.setting("Hide Tentacle Head", "x", FixifyFeatures.renderOptimizerHideTentacleHead),
+				Entry.setting("Hide Fire Overlay", "x", FixifyFeatures.renderOptimizerHideFireOverlay),
+				Entry.module("Name Replace", FixifyFeatures.nameReplaceEnabled),
+				Entry.text("Replacement", FixifyFeatures.nameReplacement, "Fixify"),
+				Entry.color("Color", FixifyFeatures.nameReplaceColor),
+				Entry.module("Zoom", FixifyFeatures.zoomEnabled),
+				Entry.slider("FOV", FixifyFeatures.zoomFov.toDouble(), 10.0, 110.0, 2.0, "", 0),
+				Entry.setting("Scrollable", "x", FixifyFeatures.zoomScrollable),
+				Entry.setting("Keybind", "C", null),
 				Entry.module("Pet Overlay", FixifyFeatures.petOverlayEnabled),
 				Entry.mode("Type", "", FixifyFeatures.petOverlayTypes, FixifyFeatures.petOverlayType),
 				Entry.setting("Show Pet Item", "x", FixifyFeatures.petOverlayShowItem),
@@ -127,6 +178,9 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 					minecraft.setScreen(FixifyHudEditorScreen(this, FixifyHudWidget.PRESSURE))
 				},
 				Entry.mode("Theme", "", FixifyFeatures.pressureThemes, FixifyFeatures.pressureDisplayTheme),
+				Entry.module("Low HP Indicator", FixifyFeatures.lowHpIndicatorEnabled),
+				Entry.slider("Transparency", FixifyFeatures.lowHpIndicatorTransparency * 100.0, 20.0, 100.0, 1.0, "%", 0),
+				Entry.setting("Pulse Animation", "x", FixifyFeatures.lowHpIndicatorHeartbeat),
 				Entry.module("Drill Fuel Meter", FixifyFeatures.drillFuelMeterEnabled),
 				Entry.mode("Anchor", "", FixifyFeatures.hudAnchors, FixifyFeatures.drillFuelMeterAnchor),
 				Entry.slider("Scale", FixifyFeatures.drillFuelMeterScale * 100.0, 50.0, 200.0, 5.0, "%", 0),
@@ -134,18 +188,63 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 					minecraft.setScreen(FixifyHudEditorScreen(this, FixifyHudWidget.DRILL_FUEL))
 				},
 				Entry.mode("Theme", "", FixifyFeatures.drillFuelThemes, FixifyFeatures.drillFuelMeterTheme),
-				Entry.module("Low HP Indicator", FixifyFeatures.lowHpIndicatorEnabled),
-				Entry.slider("Transparency", FixifyFeatures.lowHpIndicatorTransparency * 100.0, 20.0, 100.0, 1.0, "%", 0),
-				Entry.setting("Pulse Animation", "x", FixifyFeatures.lowHpIndicatorHeartbeat),
-				Entry.module("Missing Enchants", FixifyFeatures.missingEnchantsEnabled),
-				Entry.module("Compact Pet Level", FixifyFeatures.compactPetLevelEnabled),
-				Entry.module("Action Bar Cleanup", true),
+				Entry.module("Action Bar Cleanup", FixifyFeatures.actionBarCleanupEnabled),
 				Entry.setting("Hide Pressure", "x", FixifyFeatures.hidePressureInActionBar),
 				Entry.setting("Hide Drill Fuel", "x", FixifyFeatures.hideDrillFuelInActionBar),
 			),
 			MENU_WIDTH / 2.0f + 12.0f,
 		),
+		CategoryColumn(
+			"Misc",
+			arrayOf(
+				Entry.module("Diana QoL", FixifyFeatures.dianaQolEnabled),
+				Entry.module("Golden Fish CI", FixifyFeatures.goldenFishCiEnabled),
+				Entry.module("Leap Frog", FixifyFeatures.leapFrogEnabled),
+				Entry.module("Smart Term AC", FixifyFeatures.smartTermAcEnabled),
+				Entry.module("Infinite Chat", FixifyFeatures.infiniteChatEnabled),
+				*reminderEntries(),
+				Entry.module("Missing Enchants", FixifyFeatures.missingEnchantsEnabled),
+				Entry.module("Compact Pet Level", FixifyFeatures.compactPetLevelEnabled),
+			),
+			MENU_WIDTH / 2.0f + COLUMN_WIDTH + 36.0f,
+		),
 	)
+
+	private fun reminderEntries(): Array<Entry> {
+		val entries = ArrayList<Entry>()
+		entries.add(Entry.module("Reminder", FixifyFeatures.reminderEnabled))
+		entries.add(
+			Entry.slider(
+				"Warning Duration",
+				FixifyFeatures.reminderWarningDuration.toDouble(),
+				1.0,
+				30.0,
+				1.0,
+				"s",
+				0,
+			),
+		)
+		entries.add(
+			Entry.slider(
+				"Warning Scale",
+				FixifyFeatures.reminderWarningScale * 100.0,
+				50.0,
+				250.0,
+				5.0,
+				"%",
+				0,
+			),
+		)
+		entries.add(Entry.setting("Chat Command Button", "x", FixifyFeatures.reminderChatButton))
+		for ((index, rule) in FixifyFeatures.reminderRules.withIndex()) {
+			val number = index + 1
+			entries.add(Entry.setting("Reminder $number Enabled", "x", rule.enabled))
+			entries.add(Entry.text("Reminder $number Name", rule.name, "Reminder $number"))
+			entries.add(Entry.text("Reminder $number Days", rule.days, "7, 14 or 29-31"))
+			entries.add(Entry.text("Reminder $number Command", rule.command, "/warp forge"))
+		}
+		return entries.toTypedArray()
+	}
 
 	override fun tick() {
 		if (closing && closeProgress() <= 0.0f) {
@@ -217,6 +316,7 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 		}
 
 		if (isSearchHovered(baseX, baseY)) {
+			finishTextEditing()
 			searchFocused = event.button() == InputConstants.MOUSE_BUTTON_LEFT
 			focusedColorHex = null
 			return true
@@ -230,6 +330,7 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 			}
 
 			if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
+				finishTextEditing()
 				promoteColumn(column)
 				dragOffsetX = column.state.x - baseX
 				dragOffsetY = column.state.y - baseY
@@ -248,6 +349,11 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 
 		for (target in clickTargets.asReversed()) {
 			if (target.contains(baseX, baseY)) {
+				if (target.entry.type == EntryType.TEXT && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
+					focusTextEntry(target.entry)
+					return true
+				}
+				finishTextEditing()
 				if (target.entry.isKeybind() && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
 					listeningKeybind = target.entry
 					return true
@@ -280,6 +386,7 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 			}
 		}
 
+		finishTextEditing()
 		return true
 	}
 
@@ -322,6 +429,22 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 	}
 
 	override fun keyPressed(event: KeyEvent): Boolean {
+		focusedTextEntry?.let {
+			when (event.key()) {
+				InputConstants.KEY_ESCAPE,
+				InputConstants.KEY_RETURN,
+				InputConstants.KEY_NUMPADENTER,
+				-> finishTextEditing()
+
+				InputConstants.KEY_BACKSPACE -> it.removeTextCharacter()
+				InputConstants.KEY_DELETE -> it.clearText()
+				else -> if (event.isPaste()) {
+					it.appendText(minecraft.keyboardHandler.clipboard)
+				}
+			}
+			return true
+		}
+
 		listeningKeybind?.let {
 			when (event.key()) {
 				InputConstants.KEY_ESCAPE,
@@ -409,6 +532,11 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 	}
 
 	override fun charTyped(event: CharacterEvent): Boolean {
+		focusedTextEntry?.let {
+			it.appendText(event.codepointAsString())
+			return true
+		}
+
 		focusedColorHex?.let {
 			it.appendColorHex(event.codepointAsString())
 			return true
@@ -429,9 +557,24 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 
 	fun beginClose() {
 		if (!closing) {
+			finishTextEditing()
 			closing = true
 			closingAt = System.currentTimeMillis()
 		}
+	}
+
+	private fun focusTextEntry(entry: Entry) {
+		if (focusedTextEntry != entry) {
+			finishTextEditing()
+		}
+		searchFocused = false
+		focusedColorHex = null
+		focusedTextEntry = entry
+	}
+
+	private fun finishTextEditing() {
+		focusedTextEntry?.persist()
+		focusedTextEntry = null
 	}
 
 	private fun animationProgress(): Float {
@@ -680,6 +823,11 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 				addTarget(entry, x + SLIDER_HORIZONTAL_INSET, y + SLIDER_TRACK_Y - 5, SLIDER_TRACK_WIDTH, SLIDER_CLICK_HEIGHT, -1)
 			}
 
+			EntryType.TEXT -> {
+				drawTextEntry(graphics, entry, x, y)
+				addTarget(entry, x + 2, y + TEXT_INPUT_Y, ROW_WIDTH - 4, TEXT_INPUT_HEIGHT, -1)
+			}
+
 			EntryType.TAB -> {
 				centeredText(graphics, entry.label, x + 78, y + 1, ACCENT)
 			}
@@ -719,6 +867,7 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 			EntryType.MODULE -> MODULE_ENTRY_HEIGHT
 			EntryType.SETTING -> SETTING_ENTRY_HEIGHT
 			EntryType.SLIDER -> SLIDER_SETTING_HEIGHT
+			EntryType.TEXT -> TEXT_ENTRY_HEIGHT
 			EntryType.TAB -> 18
 			EntryType.MODE -> modeHeight(entry)
 			EntryType.COLOR -> colorHeight(entry)
@@ -791,6 +940,32 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 			if (draggedSlider == entry || hoveredEntry == entry) SLIDER_KNOB_HOVER_RADIUS else SLIDER_KNOB_RADIUS,
 			WHITE,
 		)
+	}
+
+	private fun drawTextEntry(graphics: GuiGraphicsExtractor, entry: Entry, x: Int, y: Int) {
+		val focused = focusedTextEntry == entry
+		text(graphics, entry.label, x + 2, y, TEXT)
+		val boxX = x + 2
+		val boxY = y + TEXT_INPUT_Y
+		val boxWidth = ROW_WIDTH - 4
+		smoothRoundedRect(boxX, boxY, boxWidth, TEXT_INPUT_HEIGHT, TEXT_INPUT_RADIUS, DETAIL_DARK)
+		smoothRoundedOutline(
+			boxX,
+			boxY,
+			boxWidth,
+			TEXT_INPUT_HEIGHT,
+			TEXT_INPUT_RADIUS,
+			if (focused) 1.5f else 1.0f,
+			if (focused) WHITE else ACCENT,
+		)
+		val displayed = if (entry.value.isEmpty() && !focused) entry.placeholder else entry.value
+		val color = if (entry.value.isEmpty() && !focused) TEXT_DIM else TEXT_MUTED
+		val fitted = fitTextToWidth(displayed, boxWidth - 14, TEXT_INPUT_TEXT_SIZE)
+		text(graphics, fitted, boxX + 7, boxY + 5, color, TEXT_INPUT_TEXT_SIZE)
+		if (focused && (System.currentTimeMillis() / 250L) % 2L == 0L) {
+			val caretX = boxX + 7 + nvgTextWidth(fitted, TEXT_INPUT_TEXT_SIZE).roundToInt() + 1
+			smoothRoundedRect(caretX.coerceAtMost(boxX + boxWidth - 6), boxY + 4, 1, TEXT_INPUT_HEIGHT - 8, 0, WHITE)
+		}
 	}
 
 	private fun drawMode(graphics: GuiGraphicsExtractor, entry: Entry, x: Int, y: Int) {
@@ -1470,6 +1645,7 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 		MODULE,
 		SETTING,
 		SLIDER,
+		TEXT,
 		TAB,
 		MODE,
 		COLOR,
@@ -1492,8 +1668,8 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 		val height: Int,
 		val colorState: FixifyFeatures.ColorState? = null,
 		var hasChildren: Boolean = false,
-		var settingsExpanded: Boolean = true,
-		var settingsProgress: Float = 1.0f,
+		var settingsExpanded: Boolean = false,
+		var settingsProgress: Float = 0.0f,
 		var settingsAnimationUpdatedAt: Long = System.currentTimeMillis(),
 		var toggleProgress: Float = if (switchValue == true) 1.0f else 0.0f,
 		var toggleAnimationUpdatedAt: Long = System.currentTimeMillis(),
@@ -1528,6 +1704,7 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 		var sliderStep: Double = 1.0,
 		var sliderSuffix: String = "",
 		var sliderDecimals: Int = 0,
+		val placeholder: String = "",
 	) {
 		fun bindStorage(key: String) {
 			storageKey = key
@@ -1580,6 +1757,8 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 						it.sliderPercentage = sliderPercentage
 					}
 
+					EntryType.TEXT -> it.value = value
+
 					EntryType.MODE,
 					EntryType.TAGS,
 					EntryType.DROPDOWN,
@@ -1602,6 +1781,23 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 		fun clearKeybind() {
 			value = "n/a"
 			keyName = null
+		}
+
+		fun appendText(input: String) {
+			val allowed = input.filter { !it.isISOControl() }
+			if (allowed.isNotEmpty()) {
+				value = (value + allowed).take(TEXT_INPUT_MAX_LENGTH)
+			}
+		}
+
+		fun removeTextCharacter() {
+			if (value.isNotEmpty()) {
+				value = value.dropLast(1)
+			}
+		}
+
+		fun clearText() {
+			value = ""
 		}
 
 		fun click(optionIndex: Int, button: Int) {
@@ -1859,6 +2055,21 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 				return entry
 			}
 
+			fun text(label: String, value: String, placeholder: String = ""): Entry {
+				return Entry(
+					EntryType.TEXT,
+					label,
+					value,
+					null,
+					false,
+					null,
+					-1,
+					0,
+					0,
+					placeholder = placeholder,
+				)
+			}
+
 			fun tab(label: String): Entry {
 				return Entry(EntryType.TAB, label, "", null, false, null, -1, 0, 0)
 			}
@@ -1963,6 +2174,12 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 		private const val SLIDER_KNOB_HOVER_RADIUS = 5.0f
 		private const val SLIDER_LEGACY_WIDTH = 144
 		private const val SLIDER_KEY_STEP = 0.01f
+		private const val TEXT_ENTRY_HEIGHT = 44
+		private const val TEXT_INPUT_Y = 17
+		private const val TEXT_INPUT_HEIGHT = 22
+		private const val TEXT_INPUT_RADIUS = 5
+		private const val TEXT_INPUT_TEXT_SIZE = 11.5f
+		private const val TEXT_INPUT_MAX_LENGTH = 64
 		private const val ACTION_ENTRY_HEIGHT = 29
 		private const val MODULE_CONFIG_RADIUS = 6
 		private const val TEXTURE_SCALE = 4

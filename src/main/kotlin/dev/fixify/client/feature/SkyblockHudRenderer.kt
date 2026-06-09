@@ -94,6 +94,12 @@ object SkyblockHudRenderer {
 				FixifyFeatures.dungeonScoreMeterY = y
 				FixifyFeatures.dungeonScoreMeterScale = scale
 			}
+
+			FixifyHudWidget.PERFORMANCE -> {
+				FixifyFeatures.performanceHudX = x
+				FixifyFeatures.performanceHudY = y
+				FixifyFeatures.performanceHudScale = scale
+			}
 		}
 	}
 
@@ -107,6 +113,7 @@ object SkyblockHudRenderer {
 			FixifyHudWidget.PRESSURE -> updateLayout(widget, -90, -55, 1.0f)
 			FixifyHudWidget.DRILL_FUEL -> updateLayout(widget, -120, -65, 1.0f)
 			FixifyHudWidget.DUNGEON_SCORE -> updateLayout(widget, -160, -50, 1.0f)
+			FixifyHudWidget.PERFORMANCE -> updateLayout(widget, 8, 8, 1.0f)
 		}
 	}
 
@@ -154,36 +161,43 @@ object SkyblockHudRenderer {
 
 	private fun renderWidgets(graphics: GuiGraphicsExtractor, previewWidget: FixifyHudWidget?) {
 		val preview = previewWidget != null
-		if (!preview && !SkyblockDataTracker.shouldRender()) {
+		val renderSkyblockWidgets = preview || SkyblockDataTracker.shouldRender()
+		val renderPerformance = previewWidget == FixifyHudWidget.PERFORMANCE ||
+			(!preview && FixifyFeatures.performanceHudEnabled)
+		if (!renderSkyblockWidgets && !renderPerformance) {
 			return
 		}
 
 		val now = System.currentTimeMillis()
-		val visible = ArrayList<FixifyHudWidget>(4)
+		val visible = ArrayList<FixifyHudWidget>(5)
 		if (
 			(previewWidget == FixifyHudWidget.PET) ||
-			(!preview && FixifyFeatures.petOverlayEnabled && SkyblockDataTracker.petActive)
+			(!preview && renderSkyblockWidgets && FixifyFeatures.petOverlayEnabled && SkyblockDataTracker.petActive)
 		) {
 			visible.add(FixifyHudWidget.PET)
 		}
 		if (
 			(previewWidget == FixifyHudWidget.PRESSURE) ||
-			(!preview && FixifyFeatures.pressureDisplayEnabled && SkyblockDataTracker.inWater &&
+			(!preview && renderSkyblockWidgets && FixifyFeatures.pressureDisplayEnabled && SkyblockDataTracker.inWater &&
 				SkyblockDataTracker.pressure >= FixifyFeatures.pressureDisplayShowAt)
 		) {
 			visible.add(FixifyHudWidget.PRESSURE)
 		}
 		if (
 			(previewWidget == FixifyHudWidget.DRILL_FUEL) ||
-			(!preview && FixifyFeatures.drillFuelMeterEnabled && now - SkyblockDataTracker.lastFuelSeenAt < 1400L)
+			(!preview && renderSkyblockWidgets && FixifyFeatures.drillFuelMeterEnabled &&
+				now - SkyblockDataTracker.lastFuelSeenAt < 1400L)
 		) {
 			visible.add(FixifyHudWidget.DRILL_FUEL)
 		}
 		if (
 			(previewWidget == FixifyHudWidget.DUNGEON_SCORE) ||
-			(!preview && FixifyFeatures.dungeonScoreMeterEnabled && SkyblockDataTracker.inDungeon)
+			(!preview && renderSkyblockWidgets && FixifyFeatures.dungeonScoreMeterEnabled && SkyblockDataTracker.inDungeon)
 		) {
 			visible.add(FixifyHudWidget.DUNGEON_SCORE)
+		}
+		if (renderPerformance) {
+			visible.add(FixifyHudWidget.PERFORMANCE)
 		}
 		if (visible.isEmpty()) {
 			return
@@ -201,6 +215,7 @@ object SkyblockHudRenderer {
 					FixifyHudWidget.PRESSURE -> drawPressure(preview)
 					FixifyHudWidget.DRILL_FUEL -> drawFuel(preview)
 					FixifyHudWidget.DUNGEON_SCORE -> drawDungeonScore(preview)
+					FixifyHudWidget.PERFORMANCE -> drawPerformance()
 				}
 				FixifyNvgRenderer.pop()
 			}
@@ -365,6 +380,61 @@ object SkyblockHudRenderer {
 		centerText("%.0f".format(score), cx, 21.0f, 8.0f, 0xCFFFFFFF.toInt())
 	}
 
+	private fun drawPerformance() {
+		val metrics = performanceMetrics()
+		if (metrics.isEmpty()) {
+			return
+		}
+		val (width, height) = baseSize(FixifyHudWidget.PERFORMANCE)
+		val nameColor = FixifyFeatures.performanceHudNameColor.argb
+		val valueColor = FixifyFeatures.performanceHudValueColor.argb
+		FixifyNvgRenderer.roundedRect(0.0f, 0.0f, width, height, 6.0f, 0xD914141C.toInt())
+		FixifyNvgRenderer.roundedOutline(0.5f, 0.5f, width - 1.0f, height - 1.0f, 6.0f, 1.0f, 0x553E3D4A)
+		FixifyNvgRenderer.gradientRect(
+			4.0f,
+			3.0f,
+			width - 8.0f,
+			2.0f,
+			1.0f,
+			0xFFAAA4FF.toInt(),
+			0xFF6A7CFF.toInt(),
+			false,
+		)
+
+		if (FixifyFeatures.performanceHudDirection == 0) {
+			val cellWidth = width / metrics.size
+			for ((index, metric) in metrics.withIndex()) {
+				val center = cellWidth * index + cellWidth / 2.0f
+				centerText(metric.first, center, 8.0f, 7.0f, nameColor)
+				centerText(metric.second, center, 16.0f, 10.0f, valueColor)
+				if (index > 0) {
+					FixifyNvgRenderer.line(cellWidth * index, 9.0f, cellWidth * index, height - 5.0f, 1.0f, 0x332F2E39)
+				}
+			}
+		} else {
+			for ((index, metric) in metrics.withIndex()) {
+				val y = 9.0f + index * 15.0f
+				FixifyNvgRenderer.text(metric.first, 8.0f, y, 8.0f, nameColor)
+				val valueWidth = FixifyNvgRenderer.textWidth(metric.second, 9.0f)
+				FixifyNvgRenderer.text(metric.second, width - valueWidth - 8.0f, y - 0.5f, 9.0f, valueColor)
+			}
+		}
+	}
+
+	private fun performanceMetrics(): List<Pair<String, String>> {
+		val metrics = ArrayList<Pair<String, String>>(3)
+		if (FixifyFeatures.performanceHudShowTps) {
+			metrics.add("TPS" to String.format(java.util.Locale.ROOT, "%.1f", PerformanceMetricsFeature.averageTps))
+		}
+		if (FixifyFeatures.performanceHudShowFps) {
+			metrics.add("FPS" to PerformanceMetricsFeature.fps().toString())
+		}
+		if (FixifyFeatures.performanceHudShowPing) {
+			metrics.add("PING" to "${PerformanceMetricsFeature.averagePing} ms")
+		}
+		return metrics
+	}
+
 	private fun drawPetItems(graphics: GuiGraphicsExtractor, preview: Boolean) {
 		val bounds = bounds(FixifyHudWidget.PET, graphics.guiWidth(), graphics.guiHeight())
 		val type = FixifyFeatures.petOverlayType
@@ -467,6 +537,14 @@ object SkyblockHudRenderer {
 			FixifyHudWidget.PRESSURE -> 34.0f to 44.0f
 			FixifyHudWidget.DRILL_FUEL -> 24.0f to 54.0f
 			FixifyHudWidget.DUNGEON_SCORE -> 40.0f to 40.0f
+			FixifyHudWidget.PERFORMANCE -> {
+				val count = performanceMetrics().size.coerceAtLeast(1)
+				if (FixifyFeatures.performanceHudDirection == 0) {
+					(58.0f * count) to 31.0f
+				} else {
+					88.0f to (13.0f + count * 15.0f)
+				}
+			}
 		}
 	}
 
@@ -475,6 +553,7 @@ object SkyblockHudRenderer {
 		FixifyHudWidget.PRESSURE -> FixifyFeatures.pressureDisplayAnchor
 		FixifyHudWidget.DRILL_FUEL -> FixifyFeatures.drillFuelMeterAnchor
 		FixifyHudWidget.DUNGEON_SCORE -> FixifyFeatures.dungeonScoreMeterAnchor
+		FixifyHudWidget.PERFORMANCE -> FixifyFeatures.performanceHudAnchor
 	}
 
 	private fun scale(widget: FixifyHudWidget): Float = when (widget) {
@@ -482,6 +561,7 @@ object SkyblockHudRenderer {
 		FixifyHudWidget.PRESSURE -> FixifyFeatures.pressureDisplayScale
 		FixifyHudWidget.DRILL_FUEL -> FixifyFeatures.drillFuelMeterScale
 		FixifyHudWidget.DUNGEON_SCORE -> FixifyFeatures.dungeonScoreMeterScale
+		FixifyHudWidget.PERFORMANCE -> FixifyFeatures.performanceHudScale
 	}
 
 	private fun offsetX(widget: FixifyHudWidget): Float = when (widget) {
@@ -489,6 +569,7 @@ object SkyblockHudRenderer {
 		FixifyHudWidget.PRESSURE -> FixifyFeatures.pressureDisplayX.toFloat()
 		FixifyHudWidget.DRILL_FUEL -> FixifyFeatures.drillFuelMeterX.toFloat()
 		FixifyHudWidget.DUNGEON_SCORE -> FixifyFeatures.dungeonScoreMeterX.toFloat()
+		FixifyHudWidget.PERFORMANCE -> FixifyFeatures.performanceHudX.toFloat()
 	}
 
 	private fun offsetY(widget: FixifyHudWidget): Float = when (widget) {
@@ -496,6 +577,7 @@ object SkyblockHudRenderer {
 		FixifyHudWidget.PRESSURE -> FixifyFeatures.pressureDisplayY.toFloat()
 		FixifyHudWidget.DRILL_FUEL -> FixifyFeatures.drillFuelMeterY.toFloat()
 		FixifyHudWidget.DUNGEON_SCORE -> FixifyFeatures.dungeonScoreMeterY.toFloat()
+		FixifyHudWidget.PERFORMANCE -> FixifyFeatures.performanceHudY.toFloat()
 	}
 
 	private fun anchoredPosition(

@@ -9,4 +9,10 @@ import org.spongepowered.asm.mixin.gen.Accessor
 interface KeyMappingAccessor {
 	@Accessor("key")
 	fun fixifyBoundKey(): InputConstants.Key
+
+	@Accessor("clickCount")
+	fun fixifyClickCount(): Int
+
+	@Accessor("clickCount")
+	fun fixifySetClickCount(count: Int)
 }

@@ -7,6 +7,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.reader
 import kotlin.io.path.writeText
+import kotlin.math.roundToInt
 
 object FixifyConfig {
 	private val gson = GsonBuilder().setPrettyPrinting().create()
@@ -48,16 +49,30 @@ object FixifyConfig {
 	fun entriesSnapshot(): Map<String, EntryData> = entries.toMap()
 
 	fun migrateEntryPrefix(oldPrefix: String, newPrefix: String) {
-		val oldEntries = entries.filterKeys { it == oldPrefix || it.startsWith("$oldPrefix.") }
-		if (oldEntries.isEmpty()) {
-			return
+		migrateEntryPrefixes(oldPrefix to newPrefix)
+	}
+
+	fun migrateEntryPrefixes(vararg migrations: Pair<String, String>) {
+		var changed = false
+		for ((oldPrefix, newPrefix) in migrations) {
+			val oldEntries = entries.filterKeys { it == oldPrefix || it.startsWith("$oldPrefix.") }
+			for ((oldKey, entry) in oldEntries) {
+				val newKey = newPrefix + oldKey.removePrefix(oldPrefix)
+				entries.putIfAbsent(newKey, entry)
+				entries.remove(oldKey)
+				changed = true
+			}
 		}
-		for ((oldKey, entry) in oldEntries) {
-			val newKey = newPrefix + oldKey.removePrefix(oldPrefix)
-			entries.putIfAbsent(newKey, entry)
-			entries.remove(oldKey)
+		if (changed) {
+			save()
 		}
-		save()
+	}
+
+	fun removeEntryPrefix(prefix: String) {
+		val removed = entries.keys.removeIf { it == prefix || it.startsWith("$prefix.") }
+		if (removed) {
+			save()
+		}
 	}
 
 	fun migrateEtherwarpLeftClickMode() {
@@ -78,6 +93,16 @@ object FixifyConfig {
 		save()
 	}
 
+	fun migrateZoomFovRange() {
+		val entry = entries["Visuals.Zoom.FOV"] ?: return
+		val fov = entry.value?.toFloatOrNull()
+			?: (30.0f + 80.0f * (entry.sliderPercentage ?: return).coerceIn(0.0f, 1.0f))
+		val clampedFov = fov.coerceIn(10.0f, 110.0f)
+		entry.value = clampedFov.roundToInt().toString()
+		entry.sliderPercentage = (clampedFov - 10.0f) / 100.0f
+		save()
+	}
+
 	fun updateEntry(key: String, updater: (EntryData) -> Unit) {
 		val entry = entries.getOrPut(key) { EntryData() }
 		updater(entry)
@@ -85,6 +110,12 @@ object FixifyConfig {
 	}
 
 	fun column(key: String): ColumnData? = columns[key]
+
+	fun migrateColumn(oldKey: String, newKey: String) {
+		val oldColumn = columns.remove(oldKey) ?: return
+		columns.putIfAbsent(newKey, oldColumn)
+		save()
+	}
 
 	fun updateColumn(key: String, updater: (ColumnData) -> Unit) {
 		val column = columns.getOrPut(key) { ColumnData() }

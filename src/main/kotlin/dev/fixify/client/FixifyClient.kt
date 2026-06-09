@@ -5,10 +5,16 @@ import com.mojang.blaze3d.platform.InputConstants
 import dev.fixify.client.feature.DungeonBreakerFeature
 import dev.fixify.client.feature.EtherwarpFeature
 import dev.fixify.client.feature.FixifyFeatures
+import dev.fixify.client.feature.GoldenFishCiFeature
+import dev.fixify.client.feature.LeapFrogFeature
+import dev.fixify.client.feature.PerformanceMetricsFeature
+import dev.fixify.client.feature.ReminderFeature
 import dev.fixify.client.feature.SkyblockDataTracker
 import dev.fixify.client.feature.SkyblockHudRenderer
 import dev.fixify.client.feature.SkyblockTooltipFeatures
+import dev.fixify.client.feature.SmartTermAcFeature
 import dev.fixify.client.feature.TeammateHighlightRenderer
+import dev.fixify.client.feature.ZoomFeature
 import dev.fixify.client.render.FixifyNvgPipRenderer
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
@@ -20,8 +26,37 @@ import net.minecraft.client.Minecraft
 class FixifyClient : ClientModInitializer {
 	override fun onInitializeClient() {
 		FixifyConfig.load()
-		FixifyConfig.migrateEntryPrefix("Misc.Etherwarp", "Dungeons.Etherwarp")
+		FixifyConfig.migrateEntryPrefixes(
+			"Misc.Etherwarp" to "Dungeons.Etherwarp",
+			"QoL.Day Reminder" to "QoL.Reminder",
+			"QoL.Player Hider" to "Visuals.Player Hider",
+			"QoL.Player Size" to "Visuals.Player Size",
+			"QoL.Hit Color" to "Visuals.Hit Color",
+			"QoL.Fullbright" to "Visuals.Fullbright",
+			"QoL.Performance HUD" to "Visuals.Performance HUD",
+			"QoL.Render Optimizer" to "Visuals.Render Optimizer",
+			"QoL.Custom Name Replacer" to "Visuals.Name Replace",
+			"QoL.Zoom" to "Visuals.Zoom",
+			"SkyBlock.Pet Overlay" to "Visuals.Pet Overlay",
+			"SkyBlock.Pressure Display" to "Visuals.Pressure Display",
+			"SkyBlock.Low HP Indicator" to "Visuals.Low HP Indicator",
+			"SkyBlock.Drill Fuel Meter" to "Visuals.Drill Fuel Meter",
+			"SkyBlock.Action Bar Cleanup" to "Visuals.Action Bar Cleanup",
+			"QoL.Diana QoL" to "Misc.Diana QoL",
+			"QoL.Golden Fish CI" to "Misc.Golden Fish CI",
+			"QoL.Leap Frog" to "Misc.Leap Frog",
+			"QoL.Smart Term AC" to "Misc.Smart Term AC",
+			"QoL.Infinite Chat" to "Misc.Infinite Chat",
+			"QoL.Reminder" to "Misc.Reminder",
+			"SkyBlock.Missing Enchants" to "Misc.Missing Enchants",
+			"SkyBlock.Compact Pet Level" to "Misc.Compact Pet Level",
+		)
+		FixifyConfig.removeEntryPrefix("SkyBlock.Only in SkyBlock")
+		FixifyConfig.removeEntryPrefix("Visuals.Name Replace.Original Name")
+		FixifyConfig.migrateColumn("SkyBlock", "Visuals")
+		FixifyConfig.migrateColumn("QoL", "Misc")
 		FixifyConfig.migrateEtherwarpLeftClickMode()
+		FixifyConfig.migrateZoomFovRange()
 		FixifyFeatures.loadFromConfig()
 
 		PictureInPictureRendererRegistry.register { context ->
@@ -33,6 +68,12 @@ class FixifyClient : ClientModInitializer {
 		SkyblockDataTracker.register()
 		SkyblockHudRenderer.register()
 		SkyblockTooltipFeatures.register()
+		GoldenFishCiFeature.register()
+		LeapFrogFeature.register()
+		PerformanceMetricsFeature.register()
+		ReminderFeature.register()
+		SmartTermAcFeature.register()
+		ZoomFeature.register()
 
 		ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
 			dispatcher.register(
@@ -50,7 +91,8 @@ class FixifyClient : ClientModInitializer {
 							}
 							1
 						},
-					),
+					)
+					.then(ReminderFeature.command()),
 			)
 		}
 

@@ -4,12 +4,16 @@
 	"version": "${version}",
 	"name": "Fixify",
 	"icon": "icon.png",
-	"description": "A configurable Hypixel SkyBlock utility mod for Minecraft 26.1.2 Fabric.",
+	"description": "A configurable client-side Hypixel SkyBlock utility mod with dungeon tools, visual customization, HUD overlays, performance improvements, reminders, and quality-of-life fixes.",
 	"authors": [
 		"Fixify"
 	],
 	"contributors": [
-		"next_g (Skylens feature design)"
+		"next_g (Skylens feature design)",
+		"Tytoyos (GibCoins feature implementations)",
+		"SkyCeleste (feature implementations)",
+		"odtheking (Odin feature implementations)",
+		"DayReminder project (feature implementation)"
 	],
 	"license": "GPL-3.0-only",
 	"environment": "client",

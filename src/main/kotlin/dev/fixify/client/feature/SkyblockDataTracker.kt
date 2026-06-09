@@ -86,7 +86,7 @@ object SkyblockDataTracker {
 		}
 	}
 
-	fun shouldRender(): Boolean = !FixifyFeatures.onlyInSkyblock || inSkyblock
+	fun shouldRender(): Boolean = true
 
 	fun fuelProgress(): Float {
 		if (fuelMaximum <= 0) {
@@ -171,7 +171,10 @@ object SkyblockDataTracker {
 	}
 
 	private fun cleanActionBar(message: Component): Component {
-		if (!shouldRender() || (!FixifyFeatures.hidePressureInActionBar && !FixifyFeatures.hideDrillFuelInActionBar)) {
+		if (
+			!FixifyFeatures.actionBarCleanupEnabled ||
+			(!FixifyFeatures.hidePressureInActionBar && !FixifyFeatures.hideDrillFuelInActionBar)
+		) {
 			return message
 		}
 

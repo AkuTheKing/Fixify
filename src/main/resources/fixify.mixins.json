@@ -4,7 +4,22 @@
 	"client": [
 		"GpuDeviceAccessor",
 		"GuiGraphicsExtractorAccessor",
-		"KeyMappingAccessor"
+		"KeyMappingAccessor",
+		"AvatarRenderStateMixin",
+		"AvatarRendererMixin",
+		"LivingEntityRendererMixin",
+		"LocalPlayerTargetingMixin",
+		"LeapFrogParticleMixin",
+		"OverlayTextureMixin",
+		"ChatComponentMixin",
+		"LightmapRenderStateExtractorMixin",
+		"LightmapMixin",
+		"GameRendererFullbrightMixin",
+		"MouseHandlerZoomMixin",
+		"ClientPacketListenerRenderMixin",
+		"EntityRendererOptimizerMixin",
+		"ScreenEffectRendererMixin",
+		"FontNameReplacerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
