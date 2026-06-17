@@ -2,6 +2,7 @@ package dev.fixify.client
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.blaze3d.platform.InputConstants
+import dev.fixify.client.feature.AutoUpdater
 import dev.fixify.client.feature.DungeonBreakerFeature
 import dev.fixify.client.feature.EtherwarpFeature
 import dev.fixify.client.feature.FixifyFeatures
@@ -19,9 +20,12 @@ import dev.fixify.client.render.FixifyNvgPipRenderer
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry
+import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
+import net.minecraft.network.chat.Component
 
 class FixifyClient : ClientModInitializer {
 	override fun onInitializeClient() {
@@ -56,8 +60,9 @@ class FixifyClient : ClientModInitializer {
 		FixifyConfig.migrateColumn("SkyBlock", "Visuals")
 		FixifyConfig.migrateColumn("QoL", "Misc")
 		FixifyConfig.migrateEtherwarpLeftClickMode()
-		FixifyConfig.migrateZoomFovRange()
+		FixifyConfig.migrateZoomIntensity()
 		FixifyFeatures.loadFromConfig()
+		AutoUpdater.init()
 
 		PictureInPictureRendererRegistry.register { context ->
 			FixifyNvgPipRenderer(context.bufferSource())
@@ -92,8 +97,13 @@ class FixifyClient : ClientModInitializer {
 							1
 						},
 					)
+					.then(autoUpdatesCommand())
 					.then(ReminderFeature.command()),
 			)
+		}
+
+		ClientLifecycleEvents.CLIENT_STOPPING.register { _ ->
+			AutoUpdater.onClientStopping()
 		}
 
 		ClientTickEvents.END_CLIENT_TICK.register { client ->
@@ -103,6 +113,7 @@ class FixifyClient : ClientModInitializer {
 			}
 			wasMenuKeyDown = menuKeyDown
 			FixifyKeybinds.tick(client)
+			AutoUpdater.onClientTick(client)
 		}
 	}
 
@@ -113,6 +124,50 @@ class FixifyClient : ClientModInitializer {
 
 		fun openMenu(client: Minecraft = Minecraft.getInstance()) {
 			client.setScreen(FixifyMenuScreen())
+		}
+
+		private fun autoUpdatesCommand(): LiteralArgumentBuilder<FabricClientCommandSource> {
+			return LiteralArgumentBuilder.literal<FabricClientCommandSource>("autoupdates")
+				.executes { context ->
+					sendUpdaterStatus(context.source.client)
+					1
+				}
+				.then(
+					LiteralArgumentBuilder.literal<FabricClientCommandSource>("status").executes { context ->
+						sendUpdaterStatus(context.source.client)
+						1
+					},
+				)
+				.then(
+					LiteralArgumentBuilder.literal<FabricClientCommandSource>("on").executes { context ->
+						AutoUpdater.setEnabledState(true)
+						AutoUpdater.checkForUpdatesAsync(true)
+						context.source.client.player?.sendSystemMessage(updaterMessage("Auto updater enabled. Checking for updates..."))
+						1
+					},
+				)
+				.then(
+					LiteralArgumentBuilder.literal<FabricClientCommandSource>("off").executes { context ->
+						context.source.client.player?.sendSystemMessage(updaterMessage("Auto updater disabled."))
+						1
+					},
+				)
+				.then(
+					LiteralArgumentBuilder.literal<FabricClientCommandSource>("check").executes { context ->
+						AutoUpdater.checkForUpdatesAsync(true)
+						context.source.client.player?.sendSystemMessage(updaterMessage(AutoUpdater.getStatusLine()))
+						1
+					},
+				)
+		}
+
+		private fun sendUpdaterStatus(client: Minecraft) {
+			client.player?.sendSystemMessage(updaterMessage(AutoUpdater.getStatusLine()))
+		}
+
+		private fun updaterMessage(message: String): Component {
+			return Component.literal("[Fixify] ").withStyle(ChatFormatting.LIGHT_PURPLE)
+				.append(Component.literal(message).withStyle(ChatFormatting.YELLOW))
 		}
 
 		private fun toggleMenu(client: Minecraft) {

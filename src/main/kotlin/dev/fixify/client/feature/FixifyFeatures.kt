@@ -40,7 +40,7 @@ object FixifyFeatures {
 	var infiniteChatEnabled: Boolean = false
 	var fullbrightEnabled: Boolean = false
 	var zoomEnabled: Boolean = true
-	var zoomFov: Int = 30
+	var zoomIntensity: Int = 5
 	var zoomScrollable: Boolean = true
 	var performanceHudEnabled: Boolean = false
 	var performanceHudDirection: Int = 0
@@ -233,7 +233,7 @@ object FixifyFeatures {
 		FixifyConfig.entry("Misc.Infinite Chat")?.enabled?.let { infiniteChatEnabled = it }
 		FixifyConfig.entry("Visuals.Fullbright")?.enabled?.let { fullbrightEnabled = it }
 		FixifyConfig.entry("Visuals.Zoom")?.enabled?.let { zoomEnabled = it }
-		zoomFov = slider("Visuals.Zoom.FOV", 10.0f, 110.0f, zoomFov.toFloat()).roundToInt()
+		zoomIntensity = slider("Visuals.Zoom.Intensity", 1.0f, 10.0f, zoomIntensity.toFloat()).roundToInt().coerceIn(1, 10)
 		zoomScrollable = switch("Visuals.Zoom.Scrollable", zoomScrollable)
 		FixifyConfig.entry("Visuals.Performance HUD")?.enabled?.let { performanceHudEnabled = it }
 		performanceHudDirection = selected(

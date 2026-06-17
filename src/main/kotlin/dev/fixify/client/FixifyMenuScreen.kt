@@ -146,7 +146,7 @@ class FixifyMenuScreen : Screen(Component.literal("Fixify")) {
 				Entry.text("Replacement", FixifyFeatures.nameReplacement, "Fixify"),
 				Entry.color("Color", FixifyFeatures.nameReplaceColor),
 				Entry.module("Zoom", FixifyFeatures.zoomEnabled),
-				Entry.slider("FOV", FixifyFeatures.zoomFov.toDouble(), 10.0, 110.0, 2.0, "", 0),
+				Entry.slider("Intensity", FixifyFeatures.zoomIntensity.toDouble(), 1.0, 10.0, 1.0, "", 0),
 				Entry.setting("Scrollable", "x", FixifyFeatures.zoomScrollable),
 				Entry.setting("Keybind", "C", null),
 				Entry.module("Pet Overlay", FixifyFeatures.petOverlayEnabled),

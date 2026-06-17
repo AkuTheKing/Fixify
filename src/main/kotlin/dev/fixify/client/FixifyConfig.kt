@@ -93,13 +93,23 @@ object FixifyConfig {
 		save()
 	}
 
-	fun migrateZoomFovRange() {
-		val entry = entries["Visuals.Zoom.FOV"] ?: return
-		val fov = entry.value?.toFloatOrNull()
-			?: (30.0f + 80.0f * (entry.sliderPercentage ?: return).coerceIn(0.0f, 1.0f))
-		val clampedFov = fov.coerceIn(10.0f, 110.0f)
-		entry.value = clampedFov.roundToInt().toString()
-		entry.sliderPercentage = (clampedFov - 10.0f) / 100.0f
+	fun migrateZoomIntensity() {
+		val oldEntry = entries["Visuals.Zoom.FOV"] ?: return
+		if (entries.containsKey("Visuals.Zoom.Intensity")) {
+			entries.remove("Visuals.Zoom.FOV")
+			save()
+			return
+		}
+		val oldFov = oldEntry.value?.toFloatOrNull()
+			?: (10.0f + 100.0f * (oldEntry.sliderPercentage ?: 0.2f).coerceIn(0.0f, 1.0f))
+		val intensity = (1.0f + (50.0f - oldFov.coerceIn(1.0f, 50.0f)) * 9.0f / 49.0f)
+			.roundToInt()
+			.coerceIn(1, 10)
+		entries.remove("Visuals.Zoom.FOV")
+		entries["Visuals.Zoom.Intensity"] = EntryData().apply {
+			value = intensity.toString()
+			sliderPercentage = (intensity - 1).toFloat() / 9.0f
+		}
 		save()
 	}
 
@@ -123,9 +133,23 @@ object FixifyConfig {
 		save()
 	}
 
+	fun getAutoUpdateEnabled(): Boolean = data.autoUpdateEnabled ?: true
+
+	fun setAutoUpdateEnabled(enabled: Boolean) {
+		data.autoUpdateEnabled = enabled
+	}
+
+	fun getAutoUpdateConsentGiven(): Boolean = data.autoUpdateConsentGiven ?: true
+
+	fun setAutoUpdateConsentGiven(consentGiven: Boolean) {
+		data.autoUpdateConsentGiven = consentGiven
+	}
+
 	class ConfigData {
 		var entries: MutableMap<String, EntryData>? = linkedMapOf()
 		var columns: MutableMap<String, ColumnData>? = linkedMapOf()
+		var autoUpdateEnabled: Boolean? = true
+		var autoUpdateConsentGiven: Boolean? = true
 
 		fun sanitize() {
 			if (entries == null) {
@@ -133,6 +157,12 @@ object FixifyConfig {
 			}
 			if (columns == null) {
 				columns = linkedMapOf()
+			}
+			if (autoUpdateEnabled == null) {
+				autoUpdateEnabled = true
+			}
+			if (autoUpdateConsentGiven == null) {
+				autoUpdateConsentGiven = true
 			}
 		}
 	}
