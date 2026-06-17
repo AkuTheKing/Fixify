@@ -4,7 +4,7 @@
 	"version": "${version}",
 	"name": "Fixify",
 	"icon": "icon.png",
-	"description": "A configurable client-side Hypixel SkyBlock utility mod with dungeon tools, visual customization, HUD overlays, performance improvements, reminders, and quality-of-life fixes.",
+	"description": "A client-side Hypixel SkyBlock utility mod with dungeon helpers, HUD overlays, visual customization, render fixes, reminders, tooltip improvements.",
 	"authors": [
 		"Fixify"
 	],

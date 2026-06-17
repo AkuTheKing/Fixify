@@ -1,8 +1,10 @@
 # Fixify
 
-Fixify is a configurable client-side utility mod for Hypixel SkyBlock. It
-combines dungeon tools, visual customization, HUD overlays, performance
-improvements, reminders, and quality-of-life fixes in one themed interface.
+Fixify is a client-side Hypixel SkyBlock utility mod focused on cleaner
+gameplay, better visibility, and smoother day-to-day controls. It combines
+dungeon helpers, HUD overlays, visual customization, performance-focused
+render fixes, reminders and tooltip improvements in one
+configurable interface.
 
 The menu is divided into three columns: **Dungeons**, **Visuals**, and
 **Misc**. Feature settings are collapsed by default, changes are saved
@@ -135,7 +137,8 @@ rendered text.
 
 Provides a configurable hold-to-zoom feature.
 
-- FOV range from 10 to 110
+- Intensity range from 1 to 10
+- Intensity 1 uses FOV 50, and intensity 10 uses FOV 1
 - Configurable keybind, defaulting to `C`
 - Optional scroll-wheel adjustment while zoomed
 - Restores the previous FOV after releasing the key
@@ -237,21 +240,3 @@ level ranges.
 - `/fixify reminder` displays Reminder status.
 - `/fixify reminder status` displays Reminder status.
 - `/fixify reminder test` displays a test Reminder warning.
-
-## Building From Source
-
-On Windows:
-
-```powershell
-.\gradlew.bat build
-```
-
-The built jar is written to `build/libs/fixify-1.0.0.jar`.
-
-## Credits And Licensing
-
-Fixify includes adapted behavior from Skylens, GibCoins, SkyCeleste,
-OdinFabric, and DayReminder. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
-for attribution and third-party license details.
-
-Fixify's declared license is GPL-3.0-only.
