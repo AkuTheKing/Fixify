@@ -145,11 +145,18 @@ object FixifyConfig {
 		data.autoUpdateConsentGiven = consentGiven
 	}
 
+	fun getInitialUpdateMessageShown(): Boolean = data.initialUpdateMessageShown ?: false
+
+	fun setInitialUpdateMessageShown(shown: Boolean) {
+		data.initialUpdateMessageShown = shown
+	}
+
 	class ConfigData {
 		var entries: MutableMap<String, EntryData>? = linkedMapOf()
 		var columns: MutableMap<String, ColumnData>? = linkedMapOf()
 		var autoUpdateEnabled: Boolean? = true
 		var autoUpdateConsentGiven: Boolean? = true
+		var initialUpdateMessageShown: Boolean? = false
 
 		fun sanitize() {
 			if (entries == null) {
@@ -163,6 +170,9 @@ object FixifyConfig {
 			}
 			if (autoUpdateConsentGiven == null) {
 				autoUpdateConsentGiven = true
+			}
+			if (initialUpdateMessageShown == null) {
+				initialUpdateMessageShown = false
 			}
 		}
 	}

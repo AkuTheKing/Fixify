@@ -237,6 +237,11 @@ level ranges.
 
 - `/fixify` opens the Fixify menu.
 - `/fixify hudedit` opens the HUD editor.
+- `/fixify auto` displays auto updater status.
+- `/fixify auto status` displays auto updater status.
+- `/fixify auto on` enables automatic update checks and downloads.
+- `/fixify auto off` disables automatic updates.
+- `/fixify auto check` checks for updates now.
 - `/fixify reminder` displays Reminder status.
 - `/fixify reminder status` displays Reminder status.
 - `/fixify reminder test` displays a test Reminder warning.

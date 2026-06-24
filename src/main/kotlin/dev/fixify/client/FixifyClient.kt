@@ -97,7 +97,7 @@ class FixifyClient : ClientModInitializer {
 							1
 						},
 					)
-					.then(autoUpdatesCommand())
+					.then(autoCommand())
 					.then(ReminderFeature.command()),
 			)
 		}
@@ -126,8 +126,8 @@ class FixifyClient : ClientModInitializer {
 			client.setScreen(FixifyMenuScreen())
 		}
 
-		private fun autoUpdatesCommand(): LiteralArgumentBuilder<FabricClientCommandSource> {
-			return LiteralArgumentBuilder.literal<FabricClientCommandSource>("autoupdates")
+		private fun autoCommand(): LiteralArgumentBuilder<FabricClientCommandSource> {
+			return LiteralArgumentBuilder.literal<FabricClientCommandSource>("auto")
 				.executes { context ->
 					sendUpdaterStatus(context.source.client)
 					1
@@ -148,6 +148,7 @@ class FixifyClient : ClientModInitializer {
 				)
 				.then(
 					LiteralArgumentBuilder.literal<FabricClientCommandSource>("off").executes { context ->
+						AutoUpdater.setEnabledState(false)
 						context.source.client.player?.sendSystemMessage(updaterMessage("Auto updater disabled."))
 						1
 					},

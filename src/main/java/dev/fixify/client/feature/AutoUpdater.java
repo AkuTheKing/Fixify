@@ -5,11 +5,11 @@ import com.google.gson.annotations.SerializedName;
 import dev.fixify.client.FixifyClient;
 import dev.fixify.client.FixifyConfig;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,29 +45,29 @@ public final class AutoUpdater {
     private static final String EXPECTED_ASSET_PREFIX = "fixify-";
     private static final String INSTALLER_MAIN_CLASS = "dev.fixify.client.feature.UpdateInstaller";
     private static final String INSTALLER_CLASS_RESOURCE = "/" + INSTALLER_MAIN_CLASS.replace('.', '/') + ".class";
+    private static final TextColor INITIAL_UPDATE_MESSAGE_COLOR = TextColor.fromRgb(0xFFFF55);
+    private static final int INITIAL_UPDATE_MESSAGE_DELAY_TICKS = 3;
 
     private static volatile long lastCheckStartedMs;
-    private static volatile boolean optInPromptShown;
-    private static volatile String statusLine = "Auto updater is disabled. Use /fixify autoupdates on to enable it.";
+    private static int initialUpdateMessageTicksRemaining = INITIAL_UPDATE_MESSAGE_DELAY_TICKS;
+    private static volatile String statusLine = "Auto updater enabled.";
 
     private AutoUpdater() {
     }
 
     public static void init() {
-        migrateUnconsentedEnablement();
         if (isEnabled()) {
-            optInPromptShown = true;
             checkForUpdatesAsync(false);
         } else {
-            statusLine = "Auto updater is disabled. Use /fixify autoupdates on to enable it.";
+            statusLine = "Auto updater is disabled. Use /fixify auto on to enable it.";
         }
     }
 
     public static void onClientTick(Minecraft client) {
         if (!isEnabled()) {
-            maybePromptForOptIn(client);
             return;
         }
+        maybeShowInitialUpdateMessage(client);
         if (CHECKING.get()) {
             return;
         }
@@ -89,15 +89,17 @@ public final class AutoUpdater {
     }
 
     public static boolean isEnabled() {
-        return FixifyConfig.INSTANCE.getAutoUpdateEnabled() && FixifyConfig.INSTANCE.getAutoUpdateConsentGiven();
+        return FixifyConfig.INSTANCE.getAutoUpdateEnabled();
     }
 
     public static void setEnabledState(boolean enabled) {
-        optInPromptShown = true;
         FixifyConfig.INSTANCE.setAutoUpdateEnabled(enabled);
         FixifyConfig.INSTANCE.setAutoUpdateConsentGiven(enabled);
+        if (!enabled) {
+            FixifyConfig.INSTANCE.setInitialUpdateMessageShown(true);
+        }
         FixifyConfig.INSTANCE.save();
-        statusLine = enabled ? "Auto updater enabled." : "Auto updater disabled. Use /fixify autoupdates on to enable it.";
+        statusLine = enabled ? "Auto updater enabled." : "Auto updater disabled. Use /fixify auto on to enable it.";
         if (!enabled) {
             clearPendingUpdate();
         }
@@ -117,7 +119,7 @@ public final class AutoUpdater {
 
     public static void checkForUpdatesAsync(boolean manual) {
         if (!isEnabled()) {
-            statusLine = "Auto updater is disabled. Use /fixify autoupdates on to enable it.";
+            statusLine = "Auto updater is disabled. Use /fixify auto on to enable it.";
             return;
         }
         if (!CHECKING.compareAndSet(false, true)) {
@@ -139,31 +141,21 @@ public final class AutoUpdater {
         });
     }
 
-    private static void migrateUnconsentedEnablement() {
-        if (!FixifyConfig.INSTANCE.getAutoUpdateEnabled() || FixifyConfig.INSTANCE.getAutoUpdateConsentGiven()) {
+    private static void maybeShowInitialUpdateMessage(Minecraft client) {
+        if (FixifyConfig.INSTANCE.getInitialUpdateMessageShown() || client == null || client.player == null) {
             return;
         }
-        FixifyConfig.INSTANCE.setAutoUpdateEnabled(false);
+        if (initialUpdateMessageTicksRemaining > 0) {
+            initialUpdateMessageTicksRemaining--;
+            return;
+        }
+        FixifyConfig.INSTANCE.setInitialUpdateMessageShown(true);
         FixifyConfig.INSTANCE.save();
-    }
-
-    private static void maybePromptForOptIn(Minecraft client) {
-        if (optInPromptShown || client == null || client.player == null) {
-            return;
-        }
-        optInPromptShown = true;
-        client.player.sendSystemMessage(Component.literal("[Fixify] ")
-                .withStyle(ChatFormatting.GOLD)
-                .append(Component.literal("Automatic updates are off. Enable automatic update checks and downloads? ")
-                        .withStyle(ChatFormatting.YELLOW))
-                .append(Component.literal("[Yes]")
-                        .withStyle(style -> style
-                                .withColor(ChatFormatting.GREEN)
-                                .withBold(true)
-                                .withClickEvent(new ClickEvent.RunCommand("/fixify autoupdates on"))
-                                .withHoverEvent(new HoverEvent.ShowText(Component.literal("Enable Fixify automatic updates")))))
-                .append(Component.literal(" You can also run /fixify autoupdates on.")
-                        .withStyle(ChatFormatting.GRAY)));
+        client.player.sendSystemMessage(Component.literal("FIXIFY: Autoupdater is on, click here to disable")
+                .withStyle(style -> style
+                        .withColor(INITIAL_UPDATE_MESSAGE_COLOR)
+                        .withClickEvent(new ClickEvent.RunCommand("/fixify auto off"))
+                        .withHoverEvent(new HoverEvent.ShowText(Component.literal("Disable Fixify automatic updates")))));
     }
 
     private static void performCheck(boolean manual) throws IOException, InterruptedException {
